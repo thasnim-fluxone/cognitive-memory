@@ -5,7 +5,8 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 import io.github.chirino.memory.grpc.v1.MemoryItem;
 import io.github.rigazilla.memory.cognition.extraction.MemoryCandidate;
-import org.junit.jupiter.api.BeforeEach;
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -15,16 +16,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Unit tests for MemoryMerger.
+ * Unit tests for MemoryMerger refactored for Quarkus.
  */
+@QuarkusTest
 class MemoryMergerTest {
 
-    private MemoryMerger merger;
-
-    @BeforeEach
-    void setUp() {
-        merger = new MemoryMerger();
-    }
+    @Inject
+    MemoryMerger merger;
 
     @Test
     void merge_KeepsHigherConfidenceFromNewCandidate() {
@@ -110,8 +108,6 @@ class MemoryMergerTest {
 
     @Test
     void merge_RawPrefixedCitation_StrippedBeforeUnion() {
-        // new candidate carries "E1: foo"; existing storage has the already-stripped "foo".
-        // After fix the union must contain "foo" exactly once, not both forms.
         MemoryCandidate newCandidate = new MemoryCandidate(
                 "fact", "User prefers Python", 0.9, List.of("E1: foo", "bar"));
 
@@ -129,8 +125,6 @@ class MemoryMergerTest {
 
     @Test
     void merge_EqualRevisions_DeterministicByKey() {
-        // two duplicates with the same revision — selection must be deterministic.
-        // With thenComparing(getKey) the lexicographically greater key wins.
         MemoryCandidate newCandidate = new MemoryCandidate(
                 "fact", "User prefers Python", 0.9, List.of());
 
@@ -139,7 +133,6 @@ class MemoryMergerTest {
 
         ResolvedCandidate result = merger.merge(newCandidate, List.of(itemA, itemB));
 
-        // Both calls with same input must return the same key
         ResolvedCandidate result2 = merger.merge(newCandidate, List.of(itemB, itemA));
         assertEquals(result.existingKey().orElseThrow(), result2.existingKey().orElseThrow(),
                 "selection must be deterministic regardless of input list order");
@@ -149,9 +142,9 @@ class MemoryMergerTest {
     void stripEntryRefPrefix_StripsVariousFormats() {
         assertEquals("foo", MemoryMerger.stripEntryRefPrefix("E1: foo"));
         assertEquals("foo", MemoryMerger.stripEntryRefPrefix("E12: foo"));
-        assertEquals("foo", MemoryMerger.stripEntryRefPrefix("E1:foo")); // no space
+        assertEquals("foo", MemoryMerger.stripEntryRefPrefix("E1:foo"));
         assertEquals("already clean", MemoryMerger.stripEntryRefPrefix("already clean"));
-        assertEquals("Error: boom", MemoryMerger.stripEntryRefPrefix("Error: boom")); // not a match
+        assertEquals("Error: boom", MemoryMerger.stripEntryRefPrefix("Error: boom"));
         assertNull(MemoryMerger.stripEntryRefPrefix(null));
         assertEquals("", MemoryMerger.stripEntryRefPrefix(""));
     }

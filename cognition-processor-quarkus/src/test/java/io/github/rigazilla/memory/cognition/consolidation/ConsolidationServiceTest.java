@@ -2,7 +2,9 @@ package io.github.rigazilla.memory.cognition.consolidation;
 
 import io.github.chirino.memory.grpc.v1.MemoryItem;
 import io.github.rigazilla.memory.cognition.extraction.MemoryCandidate;
-import org.junit.jupiter.api.BeforeEach;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -12,29 +14,25 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for ConsolidationService.
+ * Unit tests for ConsolidationService using QuarkusTest and CDI injection.
  */
+@QuarkusTest
 class ConsolidationServiceTest {
 
-    private ConsolidationService service;
-    private DuplicateDetector mockDetector;
-    private MemoryMerger mockMerger;
+    @Inject
+    ConsolidationService service;
 
-    @BeforeEach
-    void setUp() {
-        service = new ConsolidationService();
-        mockDetector = mock(DuplicateDetector.class);
-        mockMerger = mock(MemoryMerger.class);
-        service.detector = mockDetector;
-        service.merger = mockMerger;
-    }
+    @InjectMock
+    DuplicateDetector mockDetector;
+
+    @InjectMock
+    MemoryMerger mockMerger;
 
     @Test
     void deduplicate_NoDuplicates_ReturnsFreshCandidates() {
